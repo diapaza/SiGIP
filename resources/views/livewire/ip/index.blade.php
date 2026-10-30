@@ -62,14 +62,6 @@
                     placeholder="Buscar por IP, hostname, equipo, DHCP, personal u oficina…"
                     class="sm:max-w-md"
                 />
-
-                <flux:text class="text-xs">
-                    @if ($filter === 'all')
-                        Usa las pestañas para filtrar por tipo de equipo.
-                    @else
-                        {{ IpType::from($filter)->requirementsLabel() }}
-                    @endif
-                </flux:text>
             </div>
         </div>
 
@@ -265,7 +257,7 @@
                         :required="! $isDhcp"
                     />
 
-                    <flux:input wire:model="hostname" label="Hostname" placeholder="Opcional" />
+                    <flux:input wire:model="hostname" label="Hostname" placeholder="Ej. srv-dc01.local" />
 
                     <flux:input
                         wire:model.live.debounce.400ms="model"
@@ -279,7 +271,6 @@
                         <flux:input
                             wire:model.live.debounce.400ms="name"
                             label="Nombre"
-                            :label:badge="$name === '' ? 'Opcional' : null"
                             placeholder="Ej. SRV-DC01"
                         />
                     @endif

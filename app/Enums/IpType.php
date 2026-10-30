@@ -77,16 +77,4 @@ enum IpType: string
     {
         return $this === self::Workstation;
     }
-
-    /**
-     * Human readable list of requirements, used as a hint in the UI.
-     */
-    public function requirementsLabel(): string
-    {
-        return match ($this) {
-            self::Server, self::VirtualMachine => 'IP, Hostname (opcional), Equipo o Modelo y Nombre (opcional).',
-            self::Network => 'IP, Hostname (opcional) y Equipo o Modelo.',
-            self::Workstation => 'IP (o DHCP), Hostname (opcional), Oficina, Equipo o Modelo, Personal y Puesto.',
-        };
-    }
 }
