@@ -21,9 +21,9 @@ return new class extends Migration
             // Type specific requirements. They stay null for types that don't use them.
             $table->string('model')->nullable();     // Equipo o Modelo
             $table->string('name')->nullable();      // Nombre (servidores y máquinas virtuales)
-            $table->string('office')->nullable();    // Oficina (equipos de usuarios)
-            $table->string('staff')->nullable();     // Personal (equipos de usuarios)
-            $table->string('position')->nullable();  // Puesto (equipos de usuarios)
+            $table->string('office')->nullable();    // Oficina (estaciones de trabajo)
+            $table->string('staff')->nullable();     // Personal (estaciones de trabajo)
+            $table->string('position')->nullable();  // Puesto (estaciones de trabajo)
 
             // Result of the last ping.
             $table->boolean('is_active')->nullable();

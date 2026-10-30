@@ -21,6 +21,48 @@ test('the ip form marks required fields as mandatory while empty', function () {
         ->assertSee('Obligatorio');
 });
 
+test('a workstation can be registered with dhcp and no fixed ip', function () {
+    Livewire::test(IpIndex::class)
+        ->call('openCreate')
+        ->set('formType', IpType::Workstation->value)
+        ->set('isDhcp', true)
+        ->set('model', 'Dell OptiPlex 7090')
+        ->set('office', 'Oficina Central')
+        ->set('staff', 'Ana Ramírez')
+        ->set('position', 'Contabilidad')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $address = IpAddress::first();
+
+    expect($address->ip)->toBeNull()
+        ->and($address->is_dhcp)->toBeTrue()
+        ->and($address->ipLabel())->toBe('DHCP')
+        ->and($address->canBePinged())->toBeFalse();
+});
+
+test('a workstation without dhcp still requires an ip', function () {
+    Livewire::test(IpIndex::class)
+        ->set('formType', IpType::Workstation->value)
+        ->set('isDhcp', false)
+        ->set('model', 'Dell OptiPlex 7090')
+        ->set('office', 'Oficina Central')
+        ->set('staff', 'Ana Ramírez')
+        ->set('position', 'Contabilidad')
+        ->call('save')
+        ->assertHasErrors(['ip' => 'required']);
+
+    expect(IpAddress::count())->toBe(0);
+});
+
+test('the dhcp flag is reset when changing to a type that needs a fixed ip', function () {
+    Livewire::test(IpIndex::class)
+        ->set('formType', IpType::Workstation->value)
+        ->set('isDhcp', true)
+        ->set('formType', IpType::Server->value)
+        ->assertSet('isDhcp', false);
+});
+
 test('valid ip addresses pass blur validation', function () {
     Livewire::test(IpIndex::class)
         ->set('formType', IpType::Server->value)

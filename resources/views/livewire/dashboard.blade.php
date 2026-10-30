@@ -269,7 +269,13 @@ new #[Layout('components.layouts.app')] class extends Component {
                 <flux:table.rows>
                     @forelse ($recent as $address)
                         <flux:table.row :key="$address->id">
-                            <flux:table.cell class="font-mono font-medium">{{ $address->ip }}</flux:table.cell>
+                            <flux:table.cell class="font-mono font-medium">
+                                @if ($address->is_dhcp)
+                                    <flux:badge size="sm" color="sky" icon="arrows-right-left">DHCP</flux:badge>
+                                @else
+                                    {{ $address->ip }}
+                                @endif
+                            </flux:table.cell>
                             <flux:table.cell>
                                 <flux:badge size="sm" :color="$address->type->color()" :icon="$address->type->icon()">
                                     {{ $address->type->label() }}
@@ -277,7 +283,7 @@ new #[Layout('components.layouts.app')] class extends Component {
                             </flux:table.cell>
                             <flux:table.cell>{{ $address->model ?? '—' }}</flux:table.cell>
                             <flux:table.cell class="text-zinc-500 dark:text-zinc-400">
-                                {{ $address->type->requiresUserDetails() ? $address->staff : $address->name }}
+                                {{ $address->type->requiresWorkstationDetails() ? $address->staff : $address->name }}
                                 @if ($address->hostname)
                                     <span class="font-mono text-xs">· {{ $address->hostname }}</span>
                                 @endif

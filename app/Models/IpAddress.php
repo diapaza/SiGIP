@@ -23,6 +23,7 @@ class IpAddress extends Model
      */
     protected $fillable = [
         'ip',
+        'is_dhcp',
         'hostname',
         'type',
         'model',
@@ -41,6 +42,7 @@ class IpAddress extends Model
     {
         return [
             'type' => IpType::class,
+            'is_dhcp' => 'boolean',
             'is_active' => 'boolean',
             'last_pinged_at' => 'datetime',
         ];
@@ -94,5 +96,21 @@ class IpAddress extends Model
             false => 'red',
             null => 'zinc',
         };
+    }
+
+    /**
+     * Address shown in listings. DHCP records have no fixed IP.
+     */
+    public function ipLabel(): string
+    {
+        return $this->is_dhcp ? 'DHCP' : ($this->ip ?? '—');
+    }
+
+    /**
+     * DHCP records cannot be reached directly because their address is dynamic.
+     */
+    public function canBePinged(): bool
+    {
+        return ! $this->is_dhcp && filled($this->ip);
     }
 }

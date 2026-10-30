@@ -59,7 +59,7 @@
                     wire:model.live.debounce.300ms="search"
                     icon="magnifying-glass"
                     clearable
-                    placeholder="Buscar por IP, hostname, equipo, personal u oficina…"
+                    placeholder="Buscar por IP, hostname, equipo, DHCP, personal u oficina…"
                     class="sm:max-w-md"
                 />
 
@@ -85,17 +85,17 @@
                         <x-sortable-heading field="type" label="Tipo" :sort-field="$sortField" :sort-direction="$sortDirection" />
                     @endif
 
-                    @if ($filter === 'user_equipment')
+                    @if ($filter === 'workstation')
                         <x-sortable-heading field="office" label="Oficina" :sort-field="$sortField" :sort-direction="$sortDirection" />
                     @endif
 
                     <x-sortable-heading field="model" label="Equipo o Modelo" :sort-field="$sortField" :sort-direction="$sortDirection" />
 
-                    @if ($filter !== 'network' && $filter !== 'user_equipment')
+                    @if ($filter !== 'network' && $filter !== 'workstation')
                         <x-sortable-heading field="name" label="Nombre" :sort-field="$sortField" :sort-direction="$sortDirection" />
                     @endif
 
-                    @if ($filter === 'user_equipment')
+                    @if ($filter === 'workstation')
                         <x-sortable-heading field="staff" label="Personal" :sort-field="$sortField" :sort-direction="$sortDirection" />
                     @endif
 
@@ -108,7 +108,11 @@
                     @forelse ($this->addresses as $address)
                         <flux:table.row :key="$address->id">
                             <flux:table.cell class="font-mono font-medium">
-                                {{ $address->ip }}
+                                @if ($address->is_dhcp)
+                                    <flux:badge size="sm" color="sky" icon="arrows-right-left">DHCP</flux:badge>
+                                @else
+                                    {{ $address->ip }}
+                                @endif
                             </flux:table.cell>
 
                             <flux:table.cell class="font-mono text-xs">
@@ -123,17 +127,17 @@
                                 </flux:table.cell>
                             @endif
 
-                            @if ($filter === 'user_equipment')
+                            @if ($filter === 'workstation')
                                 <flux:table.cell>{{ $address->office ?? '—' }}</flux:table.cell>
                             @endif
 
                             <flux:table.cell>{{ $address->model ?? '—' }}</flux:table.cell>
 
-                            @if ($filter !== 'network' && $filter !== 'user_equipment')
+                            @if ($filter !== 'network' && $filter !== 'workstation')
                                 <flux:table.cell>{{ $address->name ?? '—' }}</flux:table.cell>
                             @endif
 
-                            @if ($filter === 'user_equipment')
+                            @if ($filter === 'workstation')
                                 <flux:table.cell class="whitespace-nowrap">
                                     <div class="font-medium text-zinc-800 dark:text-zinc-100">{{ $address->staff ?? '—' }}</div>
                                     @if ($address->position)
@@ -171,7 +175,8 @@
                                         square
                                         variant="ghost"
                                         icon="signal"
-                                        title="Hacer ping"
+                                        :title="$address->is_dhcp ? 'No disponible: la IP es dinámica (DHCP)' : 'Hacer ping'"
+                                        :disabled="$address->is_dhcp"
                                         wire:click="ping({{ $address->id }})"
                                         wire:loading.attr="disabled"
                                     />
@@ -241,14 +246,23 @@
                     @endforeach
                 </flux:select>
 
+                @if (IpType::from($formType)->requiresWorkstationDetails())
+                    <flux:checkbox
+                        wire:model.live="isDhcp"
+                        label="Usa DHCP (IP dinámica)"
+                        description="La estación obtiene su dirección IP automáticamente, así que no se registra una IP fija."
+                    />
+                @endif
+
                 <div class="grid gap-4 sm:grid-cols-2">
                     <flux:input
                         wire:model.live.debounce.400ms="ip"
                         x-on:blur="$wire.validateIp()"
                         label="Dirección IP"
-                        :label:badge="$ip === '' ? 'Obligatorio' : null"
-                        placeholder="192.168.1.10"
-                        required
+                        :label:badge="$isDhcp ? 'DHCP' : ($ip === '' ? 'Obligatorio' : null)"
+                        :placeholder="$isDhcp ? 'Asignada automáticamente' : '192.168.1.10'"
+                        :disabled="$isDhcp"
+                        :required="! $isDhcp"
                     />
 
                     <flux:input wire:model="hostname" label="Hostname" placeholder="Opcional" />
@@ -265,14 +279,13 @@
                         <flux:input
                             wire:model.live.debounce.400ms="name"
                             label="Nombre"
-                            :label:badge="$name === '' ? 'Obligatorio' : null"
+                            :label:badge="$name === '' ? 'Opcional' : null"
                             placeholder="Ej. SRV-DC01"
-                            required
                         />
                     @endif
                 </div>
 
-                @if (IpType::from($formType)->requiresUserDetails())
+                @if (IpType::from($formType)->requiresWorkstationDetails())
                     <div class="grid gap-4 sm:grid-cols-2">
                         <flux:input
                             wire:model.live.debounce.400ms="office"

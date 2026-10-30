@@ -20,6 +20,7 @@ class IpAddressFactory extends Factory
     {
         return [
             'ip' => fake()->unique()->localIpv4(),
+            'is_dhcp' => false,
             'hostname' => null,
             'type' => IpType::Server,
             'model' => fake()->randomElement(['Dell PowerEdge R740', 'HP ProLiant DL380', 'Lenovo ThinkSystem SR650']),
@@ -58,15 +59,28 @@ class IpAddressFactory extends Factory
         ]);
     }
 
-    public function userEquipment(): static
+    public function workstation(): static
     {
         return $this->state(fn () => [
-            'type' => IpType::UserEquipment,
+            'type' => IpType::Workstation,
             'model' => fake()->randomElement(['Dell OptiPlex 7090', 'HP EliteDesk 800 G6', 'Lenovo ThinkPad T14']),
             'name' => null,
             'office' => fake()->randomElement(['Oficina Central', 'Sucursal Norte', 'Almacén']),
             'staff' => fake()->name(),
             'position' => fake()->randomElement(['Analista', 'Contabilidad', 'Soporte Técnico', 'Gerencia']),
+        ]);
+    }
+
+    /**
+     * Workstation that gets its address automatically.
+     */
+    public function dhcp(): static
+    {
+        return $this->state(fn () => [
+            'ip' => null,
+            'is_dhcp' => true,
+            'is_active' => null,
+            'last_pinged_at' => null,
         ]);
     }
 }

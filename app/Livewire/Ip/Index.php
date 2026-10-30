@@ -35,6 +35,11 @@ class Index extends Component
 
     public string $formType = 'server';
 
+    /**
+     * Workstations only: the machine gets its address automatically.
+     */
+    public bool $isDhcp = false;
+
     public string $ip = '';
 
     public string $hostname = '';
@@ -81,6 +86,27 @@ class Index extends Component
         $this->resetPage();
     }
 
+    /**
+     * DHCP only applies to workstations, so switching the type resets it.
+     */
+    public function updatedFormType(): void
+    {
+        if (! $this->typeUsesDhcp()) {
+            $this->isDhcp = false;
+        }
+    }
+
+    /**
+     * A DHCP record has no fixed IP, so clear any typed value when enabled.
+     */
+    public function updatedIsDhcp(bool $value): void
+    {
+        if ($value) {
+            $this->ip = '';
+            $this->resetValidation('ip');
+        }
+    }
+
     public function updatedSearch(): void
     {
         $this->resetPage();
@@ -88,6 +114,10 @@ class Index extends Component
 
     public function validateIp(): void
     {
+        if ($this->usesDhcp()) {
+            return;
+        }
+
         $this->validateOnly('ip', $this->rules());
     }
 
@@ -107,6 +137,10 @@ class Index extends Component
                         ->orWhere('office', 'like', $term)
                         ->orWhere('staff', 'like', $term)
                         ->orWhere('position', 'like', $term);
+
+                    if (str_contains(mb_strtolower($this->search), 'dhcp')) {
+                        $query->orWhere('is_dhcp', true);
+                    }
                 });
             })
             ->orderBy($this->sortField, $this->sortDirection)
@@ -150,7 +184,8 @@ class Index extends Component
 
         $this->editingId = $address->id;
         $this->formType = $address->type->value;
-        $this->ip = $address->ip;
+        $this->isDhcp = (bool) $address->is_dhcp;
+        $this->ip = $address->ip ?? '';
         $this->hostname = $address->hostname ?? '';
         $this->model = $address->model ?? '';
         $this->name = $address->name ?? '';
@@ -163,19 +198,21 @@ class Index extends Component
 
     public function save(): void
     {
-        $validated = $this->validate($this->rules());
+        $this->validate($this->rules());
 
         $type = IpType::from($this->formType);
+        $usesDhcp = $this->usesDhcp();
 
         $data = [
-            'ip' => trim($validated['ip']),
+            'ip' => $usesDhcp ? null : trim((string) $this->ip),
+            'is_dhcp' => $usesDhcp,
             'hostname' => $this->clean($this->hostname),
             'type' => $type,
             'model' => $this->clean($this->model),
             'name' => $type->requiresName() ? $this->clean($this->name) : null,
-            'office' => $type->requiresUserDetails() ? $this->clean($this->office) : null,
-            'staff' => $type->requiresUserDetails() ? $this->clean($this->staff) : null,
-            'position' => $type->requiresUserDetails() ? $this->clean($this->position) : null,
+            'office' => $type->requiresWorkstationDetails() ? $this->clean($this->office) : null,
+            'staff' => $type->requiresWorkstationDetails() ? $this->clean($this->staff) : null,
+            'position' => $type->requiresWorkstationDetails() ? $this->clean($this->position) : null,
         ];
 
         if ($this->editingId) {
@@ -200,6 +237,16 @@ class Index extends Component
     {
         $address = IpAddress::findOrFail($id);
 
+        if (! $address->canBePinged()) {
+            Flux::toast(
+                text: 'Esta estación de trabajo obtiene su IP por DHCP, por lo que no tiene una dirección fija a la que hacer ping.',
+                heading: 'Sin IP fija',
+                variant: 'warning',
+            );
+
+            return;
+        }
+
         $isActive = app(PingService::class)->ping($address->ip);
 
         $address->update([
@@ -223,7 +270,7 @@ class Index extends Component
         $address = IpAddress::findOrFail($id);
 
         $this->deletingId = $address->id;
-        $this->deletingIp = $address->ip;
+        $this->deletingIp = $address->ipLabel();
 
         Flux::modal('delete-ip')->show();
     }
@@ -256,16 +303,32 @@ class Index extends Component
     protected function rules(): array
     {
         $type = IpType::from($this->formType);
+        $usesDhcp = $this->usesDhcp();
 
         return [
-            'ip' => ['required', 'string', 'max:45', 'ip', Rule::unique('ip_addresses', 'ip')->ignore($this->editingId)],
+            'ip' => $usesDhcp
+                ? ['nullable', 'string', 'max:45']
+                : ['required', 'string', 'max:45', 'ip', Rule::unique('ip_addresses', 'ip')->ignore($this->editingId)],
             'hostname' => ['nullable', 'string', 'max:255'],
             'model' => ['required', 'string', 'max:255'],
-            'name' => [$type->requiresName() ? 'required' : 'nullable', 'string', 'max:255'],
-            'office' => [$type->requiresUserDetails() ? 'required' : 'nullable', 'string', 'max:255'],
-            'staff' => [$type->requiresUserDetails() ? 'required' : 'nullable', 'string', 'max:255'],
-            'position' => [$type->requiresUserDetails() ? 'required' : 'nullable', 'string', 'max:255'],
+            'name' => ['nullable', 'string', 'max:255'],
+            'office' => [$type->requiresWorkstationDetails() ? 'required' : 'nullable', 'string', 'max:255'],
+            'staff' => [$type->requiresWorkstationDetails() ? 'required' : 'nullable', 'string', 'max:255'],
+            'position' => [$type->requiresWorkstationDetails() ? 'required' : 'nullable', 'string', 'max:255'],
         ];
+    }
+
+    /**
+     * Whether the form is registering a DHCP workstation.
+     */
+    protected function usesDhcp(): bool
+    {
+        return $this->isDhcp && $this->typeUsesDhcp();
+    }
+
+    protected function typeUsesDhcp(): bool
+    {
+        return IpType::tryFrom($this->formType)?->requiresWorkstationDetails() ?? false;
     }
 
     protected function clean(string $value): ?string
@@ -278,7 +341,7 @@ class Index extends Component
     protected function resetForm(): void
     {
         $this->resetValidation();
-        $this->reset(['editingId', 'ip', 'hostname', 'model', 'name', 'office', 'staff', 'position']);
+        $this->reset(['editingId', 'isDhcp', 'ip', 'hostname', 'model', 'name', 'office', 'staff', 'position']);
     }
 
     protected function refreshData(): void

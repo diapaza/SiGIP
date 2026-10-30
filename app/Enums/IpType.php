@@ -7,7 +7,7 @@ enum IpType: string
     case Server = 'server';
     case VirtualMachine = 'virtual_machine';
     case Network = 'network';
-    case UserEquipment = 'user_equipment';
+    case Workstation = 'workstation';
 
     /**
      * Plural label shown in tabs and navigation.
@@ -18,7 +18,7 @@ enum IpType: string
             self::Server => 'Servidores',
             self::VirtualMachine => 'Máquinas Virtuales',
             self::Network => 'Red',
-            self::UserEquipment => 'Equipos de Usuarios',
+            self::Workstation => 'Estaciones de Trabajo',
         };
     }
 
@@ -31,7 +31,7 @@ enum IpType: string
             self::Server => 'Servidor',
             self::VirtualMachine => 'Máquina Virtual',
             self::Network => 'Equipo de Red',
-            self::UserEquipment => 'Equipo de Usuario',
+            self::Workstation => 'Estación de Trabajo',
         };
     }
 
@@ -41,7 +41,7 @@ enum IpType: string
             self::Server => 'server-stack',
             self::VirtualMachine => 'cpu-chip',
             self::Network => 'wifi',
-            self::UserEquipment => 'computer-desktop',
+            self::Workstation => 'computer-desktop',
         };
     }
 
@@ -51,7 +51,7 @@ enum IpType: string
             self::Server => 'indigo',
             self::VirtualMachine => 'violet',
             self::Network => 'sky',
-            self::UserEquipment => 'amber',
+            self::Workstation => 'amber',
         };
     }
 
@@ -64,7 +64,7 @@ enum IpType: string
             self::Server => '#6366f1',
             self::VirtualMachine => '#8b5cf6',
             self::Network => '#0ea5e9',
-            self::UserEquipment => '#f59e0b',
+            self::Workstation => '#f59e0b',
         };
     }
 
@@ -73,9 +73,9 @@ enum IpType: string
         return in_array($this, [self::Server, self::VirtualMachine], true);
     }
 
-    public function requiresUserDetails(): bool
+    public function requiresWorkstationDetails(): bool
     {
-        return $this === self::UserEquipment;
+        return $this === self::Workstation;
     }
 
     /**
@@ -84,9 +84,9 @@ enum IpType: string
     public function requirementsLabel(): string
     {
         return match ($this) {
-            self::Server, self::VirtualMachine => 'IP, Hostname (opcional), Equipo o Modelo y Nombre.',
+            self::Server, self::VirtualMachine => 'IP, Hostname (opcional), Equipo o Modelo y Nombre (opcional).',
             self::Network => 'IP, Hostname (opcional) y Equipo o Modelo.',
-            self::UserEquipment => 'IP, Hostname (opcional), Oficina, Equipo o Modelo, Personal y Puesto.',
+            self::Workstation => 'IP (o DHCP), Hostname (opcional), Oficina, Equipo o Modelo, Personal y Puesto.',
         };
     }
 }
