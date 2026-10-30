@@ -4,63 +4,63 @@
         @include('partials.head')
     </head>
     <body class="min-h-screen bg-white dark:bg-zinc-800">
-        <flux:sidebar sticky collapsible="true" class="border-r border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
+        <flux:sidebar sticky collapsible class="border-r border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
             <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
 
-            <div class="flex min-h-10 items-center justify-between gap-2">
+            <flux:sidebar.header>
                 <a href="{{ route('dashboard') }}" class="flex items-center space-x-2" wire:navigate>
                     <x-app-logo class="size-8" href="#"></x-app-logo>
                 </a>
 
-                <flux:sidebar.collapse />
-            </div>
+                <flux:sidebar.collapse class="in-data-flux-sidebar-on-desktop:not-in-data-flux-sidebar-collapsed-desktop:-mr-2" />
+            </flux:sidebar.header>
 
-            <flux:navlist variant="outline">
-                <flux:navlist.group heading="Panel" class="grid">
-                    <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>Dashboard</flux:navlist.item>
-                </flux:navlist.group>
+            <flux:sidebar.nav>
+                <flux:sidebar.group heading="Panel" class="grid">
+                    <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>Dashboard</flux:sidebar.item>
+                </flux:sidebar.group>
 
-                <flux:navlist.group heading="Inventario de IP" class="mt-4 grid">
-                    <flux:navlist.item
+                <flux:sidebar.group heading="Inventario de IP" class="mt-4 grid">
+                    <flux:sidebar.item
                         icon="globe-alt"
                         :href="route('ip.index')"
                         :current="request()->routeIs('ip.index') && ! request('tipo')"
                         wire:navigate
                     >
                         Todas las IP
-                    </flux:navlist.item>
+                    </flux:sidebar.item>
 
                     @foreach (App\Enums\IpType::cases() as $navType)
-                        <flux:navlist.item
+                        <flux:sidebar.item
                             :icon="$navType->icon()"
                             :href="route('ip.index', ['tipo' => $navType->value])"
                             :current="request()->routeIs('ip.index') && request('tipo') === $navType->value"
                             wire:navigate
                         >
                             {{ $navType->label() }}
-                        </flux:navlist.item>
+                        </flux:sidebar.item>
                     @endforeach
-                </flux:navlist.group>
+                </flux:sidebar.group>
 
                 @can('manage-users')
-                    <flux:navlist.group heading="Administración" class="mt-4 grid">
-                        <flux:navlist.item
+                    <flux:sidebar.group heading="Administración" class="mt-4 grid">
+                        <flux:sidebar.item
                             icon="users"
                             :href="route('users.index')"
                             :current="request()->routeIs('users.index')"
                             wire:navigate
                         >
                             Usuarios
-                        </flux:navlist.item>
-                    </flux:navlist.group>
+                        </flux:sidebar.item>
+                    </flux:sidebar.group>
                 @endcan
-            </flux:navlist>
+            </flux:sidebar.nav>
 
             <flux:spacer />
 
             <!-- Desktop User Menu -->
-            <flux:dropdown position="bottom" align="start">
-                <flux:profile
+            <flux:dropdown position="top" align="start" class="max-lg:hidden">
+                <flux:sidebar.profile
                     :name="auth()->user()->name"
                     :initials="auth()->user()->initials()"
                     icon-trailing="chevrons-up-down"
