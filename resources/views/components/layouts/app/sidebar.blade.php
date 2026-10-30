@@ -5,14 +5,12 @@
     </head>
     <body class="min-h-screen bg-white dark:bg-zinc-800">
         <flux:sidebar sticky collapsible class="border-r border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
-            <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
-
             <flux:sidebar.header>
                 <a href="{{ route('dashboard') }}" class="flex items-center space-x-2" wire:navigate>
                     <x-app-logo class="size-8" href="#"></x-app-logo>
                 </a>
 
-                <flux:sidebar.collapse class="in-data-flux-sidebar-on-desktop:not-in-data-flux-sidebar-collapsed-desktop:-mr-2" />
+                <flux:sidebar.collapse class="in-data-flux-sidebar-on-desktop:not-in-data-flux-sidebar-collapsed-desktop:-mr-2 in-data-flux-sidebar-collapsed-desktop:z-10 in-data-flux-sidebar-collapsed-desktop:[&_button]:bg-zinc-50 in-data-flux-sidebar-collapsed-desktop:[&_button]:hover:bg-zinc-200 dark:in-data-flux-sidebar-collapsed-desktop:[&_button]:bg-zinc-900 dark:in-data-flux-sidebar-collapsed-desktop:[&_button]:hover:bg-zinc-700" />
             </flux:sidebar.header>
 
             <flux:sidebar.nav>
